@@ -2754,14 +2754,9 @@ end
 
 local DecompileJobless = false
 OPTIONS.DecompileJobless = false
-OPTIONS.scriptcache = true
-
-local ScriptCache = getscriptbytecode
-OPTIONS.DecompileJobless = false
 OPTIONS.scriptcache = false
+local ScriptCache = getscriptbytecode
 
-local DecompileJobless = false
-	local ScriptCache = OPTIONS.scriptcache and getscriptbytecode
 
 	local DecompileTimeout = -1
 

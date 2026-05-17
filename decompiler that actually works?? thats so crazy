@@ -2942,9 +2942,7 @@ local ScriptCache = getscriptbytecode
 	local IsolateLocalPlayerCharacter = OPTIONS.IsolateLocalPlayerCharacter
 	local IsolatePlayers = OPTIONS.IsolatePlayers
 	local IsolateStarterPlayer = OPTIONS.IsolateStarterPlayer
-	local NilInstances = OPTIONS.NilInstances
-
-	enablenilinstances()
+	local NilInstances = true
 	local function get_size_format()
 		local Size
 

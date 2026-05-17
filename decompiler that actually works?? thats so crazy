@@ -2391,7 +2391,7 @@ local GLOBAL_ENV = getgenv and getgenv() or _G or shared
 
 	local synsaveinstance = loadstring(game:HttpGet(Params.RepoURL .. Params.SSI .. ".luau", true), Params.SSI)()
 
-	local CustomOptions = { SafeMode = true, DecompileTimeout = 15, SaveBytecode = true }
+	local CustomOptions = { SafeMode = true, DecompileTimeout = 200000, SaveBytecode = true }
 
 	synsaveinstance(CustomOptions)
 	```
@@ -2425,7 +2425,7 @@ local function synsaveinstance(CustomOptions, CustomOptions2)
 		Decompile = EXECUTOR_NAME ~= "Velocity", -- TODO Temp fix for crashes
 		scriptcache = true,
 		-- decomptype = "",
-		DecompileTimeout = 10,
+		DecompileTimeout = 200000,
 		-- * New:
 		__DEBUG_MODE = false,
 

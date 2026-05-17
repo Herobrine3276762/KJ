@@ -2406,12 +2406,12 @@ local function synsaveinstance(CustomOptions, CustomOptions2)
 		return
 	end
 	GLOBAL_ENV.USSI = true
-	-- do -- ? Causes issues on SirHurt (Kick lacking Capability "Consequences"), let threads operate on their default/preferred identity set by the developers
-	-- 	local setthreadidentity = global_container.setthreadidentity
-	-- 	if setthreadidentity then
-	-- 		pcall(setthreadidentity, 8) -- ? Arceus X Fix
-	-- 	end
-	-- end
+do
+	local setthreadidentity = global_container.setthreadidentity
+	if setthreadidentity then
+		pcall(setthreadidentity, 8)
+	end
+end
 
 	local totalsize, chunks = 0, table.create(1)
 	local savebuffer, savebuffer_size = {}, 1
@@ -2756,6 +2756,10 @@ local function synsaveinstance(CustomOptions, CustomOptions2)
 	if DecompileJobless then
 		OPTIONS.scriptcache = true
 	end
+OPTIONS.DecompileJobless = false
+OPTIONS.scriptcache = false
+
+local DecompileJobless = false
 	local ScriptCache = OPTIONS.scriptcache and getscriptbytecode
 
 	local DecompileTimeout = -1
@@ -3151,9 +3155,10 @@ do
 				script
 			)
 
-			if not result then
-				ok, result = false, "Empty Output"
-			end
+if not result then
+	result = "-- empty output"
+	ok = true
+end
 
 			local output
 

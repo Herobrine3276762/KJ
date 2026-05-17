@@ -2752,10 +2752,11 @@ end
 	local SaveNotCreatable = OPTIONS.SaveNotCreatable
 	local TreatUnionsAsParts = OPTIONS.TreatUnionsAsParts
 
-	local DecompileJobless = OPTIONS.DecompileJobless
-	if DecompileJobless then
-		OPTIONS.scriptcache = true
-	end
+local DecompileJobless = false
+OPTIONS.DecompileJobless = false
+OPTIONS.scriptcache = true
+
+local ScriptCache = getscriptbytecode
 OPTIONS.DecompileJobless = false
 OPTIONS.scriptcache = false
 

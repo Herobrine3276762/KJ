@@ -2391,7 +2391,7 @@ local GLOBAL_ENV = getgenv and getgenv() or _G or shared
 
 	local synsaveinstance = loadstring(game:HttpGet(Params.RepoURL .. Params.SSI .. ".luau", true), Params.SSI)()
 
-	local CustomOptions = { SafeMode = true, DecompileTimeout = 200000, SaveBytecode = true }
+	local CustomOptions = { SafeMode = true, DecompileTimeout = -1, SaveBytecode = true }
 
 	synsaveinstance(CustomOptions)
 	```
@@ -2425,7 +2425,7 @@ local function synsaveinstance(CustomOptions, CustomOptions2)
 		Decompile = EXECUTOR_NAME ~= "Velocity", -- TODO Temp fix for crashes
 		scriptcache = true,
 		-- decomptype = "",
-		DecompileTimeout = 200000,
+		DecompileTimeout = -1,
 		-- * New:
 		__DEBUG_MODE = false,
 
@@ -2436,13 +2436,10 @@ local function synsaveinstance(CustomOptions, CustomOptions2)
 		-- DisableCompression = false, --Description: Disables compression in the binary output
 
 		DecompileJobless = false,
-		DecompileIgnore = { -- * Clean these up (merged Old Syn and New Syn)
-			-- "Chat",
-			"TextChatService",
-			ModuleScript = nil,
+		DecompileIgnore = {
 		},
-		IgnoreDefaultPlayerScripts = true,
-		SaveBytecode = false,
+		IgnoreDefaultPlayerScripts = false,
+		SaveBytecode = true,
 
 		IgnoreProperties = {},
 
@@ -2703,44 +2700,6 @@ local function synsaveinstance(CustomOptions, CustomOptions2)
 		GLOBAL_ENV.USSI = nil
 		return
 	end
-
-	if OPTIONS.IgnoreDefaultPlayerScripts then
-		-- TODO This is a bad workaround, find a better automatic way
-		-- TODO Look into https://robloxapi.github.io/ref/class/LuaSourceContainer.html#member-isPlayerScript
-		local DecompileIgnore = OPTIONS.DecompileIgnore
-
-		local default_scripts = ArrayToDict({
-			ModuleScript = { "PlayerModule" },
-			LocalScript = {
-				"BubbleChat",
-				"ChatScript",
-				"PlayerScriptsLoader",
-				"RbxCharacterSounds",
-			},
-		}, true)
-
-		local function ignorePath(path)
-			if path then
-				for _, child in path:GetChildren() do
-					local class_match = default_scripts[child.ClassName]
-					if class_match then
-						local name_match = class_match[child.Name]
-						if name_match then
-							table.insert(DecompileIgnore, child)
-						end
-					end
-				end
-			end
-		end
-
-		ignorePath(service.StarterPlayer:FindFirstChildOfClass("StarterPlayerScripts"))
-
-		local LocalPlayer = service.Players.LocalPlayer
-		if LocalPlayer then
-			ignorePath(LocalPlayer:FindFirstChildOfClass("PlayerScripts"))
-		end
-	end
-
 	local InstancesOverrides = {}
 
 	local DecompileIgnore, IgnoreList, IgnoreProperties, NotCreatableFixes =
@@ -2799,7 +2758,7 @@ local function synsaveinstance(CustomOptions, CustomOptions2)
 	end
 	local ScriptCache = OPTIONS.scriptcache and getscriptbytecode
 
-	local DecompileTimeout = OPTIONS.DecompileTimeout
+	local DecompileTimeout = -1
 
 	local IgnoreSharedStrings = OPTIONS.IgnoreSharedStrings
 	local SharedStringOverwrite = OPTIONS.SharedStringOverwrite
@@ -2985,9 +2944,7 @@ local function synsaveinstance(CustomOptions, CustomOptions2)
 	local IsolateStarterPlayer = OPTIONS.IsolateStarterPlayer
 	local NilInstances = OPTIONS.NilInstances
 
-	if NilInstances and enablenilinstances then -- ? Solara fix
-		enablenilinstances()
-	end
+	enablenilinstances()
 	local function get_size_format()
 		local Size
 
@@ -3063,34 +3020,9 @@ local function synsaveinstance(CustomOptions, CustomOptions2)
 	end
 
 local function construct_TimeoutHandler(timeout, f, timeout_return)
-	return timeout < 0 and function(script)
-		return pcall(f, script)
-	end or function(script)
-		local thread = coroutine.running()
-		local timeoutThread, isCancelled
-
-		timeoutThread = task.delay(timeout, function()
-			isCancelled = true
-			coroutine.resume(thread, nil, timeout_return)
-		end)
-
-		task.spawn(function()
-			local ok, result = pcall(f, script)
-
-			if isCancelled then
-				return
-			end
-
-			task.cancel(timeoutThread)
-
-			while coroutine.status(thread) ~= "suspended" do
-				task.wait()
-			end
-
-			coroutine.resume(thread, ok, result)
-		end)
-
-		return coroutine.yield()
+	return function(script)
+		local ok, result = pcall(f, script)
+		return ok, result
 	end
 end
 
@@ -3151,11 +3083,6 @@ do
 
 			if not ok then
 				return "-- failed to read script bytecode\n--[[\n" .. tostring(bytecode) .. "\n--]]"
-			end
-
-			local elapsed = os.clock() - last
-			if elapsed < 0.12 then
-				task.wait(0.12 - elapsed)
 			end
 
 			local res = request({
@@ -3234,7 +3161,18 @@ do
 				result = string.gsub(result, "\0", "\\0")
 				output = result
 			else
-				output = "--[[ Failed to decompile. Reason:\n" .. (result or "") .. "\n]]"
+				local bc = getscriptbytecode and getscriptbytecode(script)
+
+if bc and bc ~= "" then
+	output =
+		"-- FAILED TO DECOMPILE, BYTECODE FALLBACK:\n\n" ..
+		base64encode(bc)
+else
+	output =
+		"--[[ Failed to decompile. Reason:\n" ..
+		(result or "") ..
+		"\n]]"
+end
 			end
 
 			if ScriptCache and bytecode then
